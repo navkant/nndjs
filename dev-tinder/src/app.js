@@ -1,6 +1,7 @@
 import express from "express";
 import connectDb from "./config/database.js";
 import User from "./models/user.js";
+import { ObjectId } from "mongodb";
 
 const app = express();
 app.use(express.json());
@@ -23,12 +24,11 @@ app.post("/signup", async (req, res) => {
   });
 });
 
-app.get("/users/:firstName", async (req, res) => {
-  const userDbList = await User.find({
-    firstName: { $regex: new RegExp(req.params.firstName, "i") },
-  });
+app.get("/users", async (req, res) => {
+  const userDbList = await User.find({});
   const userList = userDbList.map((user, index) => {
     return {
+      id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
       emailId: user.emailId,
@@ -39,6 +39,63 @@ app.get("/users/:firstName", async (req, res) => {
     message: "success",
     status: 0,
     userList: userList,
+  });
+});
+
+app.get("/users/:emailId", async (req, res) => {
+  const user = await User.findOne({
+    emailId: req.params.emailId,
+  });
+  res.send({
+    message: "success",
+    status: 0,
+    user: {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    },
+  });
+});
+
+app.delete("/users", async (req, res) => {
+  console.log("delete api called", req.query.userId);
+  const resp = await User.findByIdAndDelete(req.query.userId);
+  console.log(resp);
+  res.send({
+    message: "success",
+    status: 0,
+  });
+});
+
+app.patch("/users", async (req, res) => {
+  console.log("patch api called");
+  console.log(`userId: ${req.query.userId} email: ${req.body.emailId}`);
+  const resp = await User.findByIdAndUpdate(req.query.userId, req.body, {
+    returnDocument: "after",
+  });
+  console.log(`object: ${resp}`);
+  res.send({
+    message: "success ",
+    status: "0",
+    user: {
+      firstName: resp.firstName,
+      lastName: resp.lastName,
+      emailId: resp.emailId,
+    },
+  });
+});
+
+app.patch("/users/update-many", async (req, res) => {
+  console.log(
+    `update many called for ${req.query.emailId} ${JSON.stringify(req.body)}`
+  );
+
+  const resp = await User.updateMany({ emailId: req.query.emailId }, req.body);
+  console.log(`update many response: ${resp}`);
+
+  res.send({
+    message: "updated many successfull",
+    status: 0,
   });
 });
 
