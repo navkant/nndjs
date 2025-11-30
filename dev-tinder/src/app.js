@@ -9,19 +9,23 @@ const PORT = 3000;
 
 app.post("/signup", async (req, res) => {
   const newUser = new User(req.body);
-  const newDbUser = await newUser.save();
-
-  res.send({
-    message: "success",
-    status: 0,
-    user: {
-      firstName: newDbUser.firstName,
-      lastName: newDbUser.lastName,
-      emailId: newDbUser.emailId,
-      password: newDbUser.password,
-      id: newDbUser._id,
-    },
-  });
+  try {
+    const newDbUser = await newUser.save();
+    res.send({
+      message: "success",
+      status: 0,
+      user: {
+        firstName: newDbUser.firstName,
+        lastName: newDbUser.lastName,
+        emailId: newDbUser.emailId,
+        password: newDbUser.password,
+        id: newDbUser._id,
+      },
+    });
+  } catch (err) {
+    console.log(`err: ${err}`);
+    res.status(400).send(`could not create user: ${err}`);
+  }
 });
 
 app.get("/users", async (req, res) => {
