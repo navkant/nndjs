@@ -4,9 +4,14 @@ import User from "./models/user.js";
 import { ObjectId } from "mongodb";
 import validateSignupData from "./utils/validation.js";
 import bcrypt from "bcrypt";
+import cookieParser from "cookie-parser";
+import auth from "./middlewares/auth.js";
+import jwt from "jsonwebtoken";
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
+
 const PORT = 3000;
 
 app.post("/signup", async (req, res) => {
@@ -51,6 +56,9 @@ app.post("/login", async (req, res) => {
       res.status(400).send(`Invalid credentials`);
       return;
     }
+    const token = jwt.sign({ id: user._id }, "secret");
+
+    res.cookie("token", token);
     res.send({
       message: "success",
       status: 0,
@@ -65,6 +73,26 @@ app.post("/login", async (req, res) => {
   } catch (err) {
     console.log(`err: ${err}`);
     res.status(400).send(`could not login user: ${err}`);
+  }
+});
+
+app.get("/profile", auth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.send({
+      message: "success",
+      status: 0,
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailId: user.emailId,
+        password: user.password,
+        id: user._id,
+      },
+    });
+  } catch (err) {
+    console.log(`err: ${err}`);
+    res.status(400).send(`could not get profile: ${err}`);
   }
 });
 
